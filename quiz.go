@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"log"
 	"os"
 	"strings"
 )
@@ -15,8 +16,7 @@ func quiz(problems *[]problem) {
 		fmt.Printf("Problem #%d: %s = ", idx+1, p.formula)
 		answ, err := r.ReadString('\n')
 		if err != nil {
-			fmt.Println("failed to read answer")
-			continue
+			log.Fatal("failed to read answer")
 		}
 
 		answ = strings.TrimSuffix(answ, "\r\n")
