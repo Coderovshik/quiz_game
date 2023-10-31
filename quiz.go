@@ -3,27 +3,47 @@ package main
 import (
 	"bufio"
 	"fmt"
-	"log"
 	"os"
 	"strings"
+	"time"
 )
 
-func quiz(problems *[]problem) {
+func logScore(score, total int) {
+	fmt.Printf("\nYou scored %d out of %d", score, total)
+}
+
+func quiz(problems []problem, limit int) {
 	correctCount := 0
 	r := bufio.NewReader(os.Stdin)
 
-	for idx, p := range *problems {
+running:
+	for idx, p := range problems {
 		fmt.Printf("Problem #%d: %s = ", idx+1, p.formula)
-		answ, err := r.ReadString('\n')
-		if err != nil {
-			log.Fatal("failed to read answer")
-		}
 
-		answ = strings.TrimSuffix(answ, "\r\n")
-		if p.solution == answ {
-			correctCount++
+		timeoutch := make(chan struct{})
+		answch := make(chan string)
+
+		go func() {
+			time.Sleep(time.Duration(limit) * time.Second)
+			close(timeoutch)
+		}()
+
+		go func() {
+			answ, _ := r.ReadString('\n')
+			answch <- answ
+		}()
+
+		select {
+		case answ := <-answch:
+			answ = strings.TrimSuffix(answ, "\r\n")
+			if p.solution == answ {
+				correctCount++
+			}
+			close(answch)
+		case <-timeoutch:
+			break running
 		}
 	}
 
-	fmt.Printf("You scored %d out of %d", correctCount, len(*problems))
+	logScore(correctCount, len(problems))
 }
